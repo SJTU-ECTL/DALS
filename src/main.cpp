@@ -12,5 +12,6 @@
 int main(int argc,  char* argv[]) {
     PrintNodeInfo();
     ApproximateSubstitution();
+    StaticTimingAnalysis();
     return 0;
 }

@@ -13,4 +13,6 @@ void PrintNodeInfo();
 
 void ApproximateSubstitution();
 
+void StaticTimingAnalysis();
+
 #endif

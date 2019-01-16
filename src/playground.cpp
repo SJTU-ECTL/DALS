@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/timer/timer.hpp>
 #include <abc_plus.h>
+#include <sta.h>
 
 using namespace boost::filesystem;
 using namespace abc_plus;
@@ -52,4 +53,14 @@ void ApproximateSubstitution() {
 
     ObjRecover(target_node, target_node_bak);
     std::cout << "Recovered: " << SimER(origin_ntk, approx_ntk) << std::endl;
+}
+
+void StaticTimingAnalysis() {
+    path project_source_dir(PROJECT_SOURCE_DIR);
+    path benchmark_dir = project_source_dir / "benchmark";
+    path benchmark_path = benchmark_dir / "C17.blif";
+
+    NtkPtr ntk = NtkReadBlif(benchmark_path.string());
+    CalcSlack(ntk, true);
+    GetKMostCriticalPaths(ntk, 10, true);
 }
