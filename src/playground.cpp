@@ -21,15 +21,14 @@ void PrintNodeInfo() {
     path benchmark_dir = project_source_dir / "benchmark";
     path benchmark_path = benchmark_dir / "C17.blif";
 
-    NtkPtr origin_ntk = NtkReadBlif(benchmark_path.string());
-    NtkPtr approx_ntk = NtkDuplicate(origin_ntk);
+    NtkPtr ntk = NtkReadBlif(benchmark_path.string());
 
     std::cout << "Objs' names & types:\n";
-    for (auto obj : NtkObjs(approx_ntk))
+    for (auto obj : NtkObjs(ntk))
         std::cout << ObjName(obj) << ":" << obj->Type << " ";
     std::cout << std::endl;
     std::cout << "Sorted PIs & Nodes' names & types:\n";
-    for (auto obj : NtkTopoSortPINode(origin_ntk))
+    for (auto obj : NtkTopoSortPINode(ntk))
         std::cout << ObjName(obj) << ":" << obj->Type << " ";
     std::cout << std::endl;
 }
