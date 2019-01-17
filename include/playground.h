@@ -15,4 +15,6 @@ void ApproximateSubstitution();
 
 void StaticTimingAnalysis();
 
+void Visualization();
+
 #endif

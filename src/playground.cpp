@@ -64,3 +64,14 @@ void StaticTimingAnalysis() {
     CalcSlack(ntk, true);
     GetKMostCriticalPaths(ntk, 10, true);
 }
+
+void Visualization() {
+    path project_source_dir(PROJECT_SOURCE_DIR);
+    path benchmark_dir = project_source_dir / "benchmark";
+    path out_dir = project_source_dir / "out";
+    path benchmark_path = benchmark_dir / "C17.blif";
+    path dot_path = out_dir / "C17.dot";
+
+    NtkPtr ntk = NtkReadBlif(benchmark_path.string());
+    NtkWriteDot(ntk, dot_path.string());
+}
