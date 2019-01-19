@@ -18,8 +18,8 @@ using namespace abc_plus;
 
 void PrintNodeInfo() {
     path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark";
-    path benchmark_path = benchmark_dir / "C17.blif";
+    path benchmark_dir = project_source_dir / "benchmark" / "blif";
+    path benchmark_path = benchmark_dir / "c17.blif";
 
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
 
@@ -35,16 +35,16 @@ void PrintNodeInfo() {
 
 void ApproximateSubstitution() {
     path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark";
-    path benchmark_path = benchmark_dir / "C17.blif";
+    path benchmark_dir = project_source_dir / "benchmark" / "blif";
+    path benchmark_path = benchmark_dir / "c17.blif";
 
     NtkPtr origin_ntk = NtkReadBlif(benchmark_path.string());
     NtkPtr approx_ntk = NtkDuplicate(origin_ntk);
 
-    auto target_node = NtkNodebyName(approx_ntk, "G23gat");
+    auto target_node = NtkNodebyName(approx_ntk, "23");
     auto target_node_bak = NtkObjbyID(origin_ntk, ObjID(target_node));
 
-    auto sub_node = NtkNodebyName(approx_ntk, "G19gat");
+    auto sub_node = NtkNodebyName(approx_ntk, "n9");
     auto sub_inv = ObjCreateInv(sub_node);
 
     ObjReplace(target_node, sub_inv);
@@ -56,8 +56,8 @@ void ApproximateSubstitution() {
 
 void StaticTimingAnalysis() {
     path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark";
-    path benchmark_path = benchmark_dir / "C17.blif";
+    path benchmark_dir = project_source_dir / "benchmark" / "blif";
+    path benchmark_path = benchmark_dir / "c17.blif";
 
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
     CalcSlack(ntk, true);
@@ -66,10 +66,10 @@ void StaticTimingAnalysis() {
 
 void Visualization() {
     path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark";
+    path benchmark_dir = project_source_dir / "benchmark" / "blif";
     path out_dir = project_source_dir / "out";
-    path benchmark_path = benchmark_dir / "C17.blif";
-    path dot_path = out_dir / "C17.dot";
+    path benchmark_path = benchmark_dir / "c17.blif";
+    path dot_path = out_dir / "c17.dot";
 
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
     NtkWriteDot(ntk, dot_path.string());
