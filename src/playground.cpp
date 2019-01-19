@@ -24,11 +24,11 @@ void PrintNodeInfo() {
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
 
     std::cout << "Objs' names & types:\n";
-    for (auto obj : NtkObjs(ntk))
+    for (auto const &obj : NtkObjs(ntk))
         std::cout << ObjName(obj) << ":" << obj->Type << " ";
     std::cout << std::endl;
     std::cout << "Sorted PIs & Nodes' names & types:\n";
-    for (auto obj : NtkTopoSortPINode(ntk))
+    for (auto const &obj : NtkTopoSortPINode(ntk))
         std::cout << ObjName(obj) << ":" << obj->Type << " ";
     std::cout << std::endl;
 }
