@@ -7,8 +7,11 @@
  */
 
 #include <iostream>
+#include <iomanip>
+#include <bitset>
 #include <boost/filesystem.hpp>
 #include <abc_plus.h>
+#include <dals.h>
 
 using namespace boost::filesystem;
 using namespace abc_plus;
@@ -21,12 +24,28 @@ int main(int argc, char *argv[]) {
     path blif_dir = project_source_dir / "benchmark" / "blif";
     std::vector<std::string> iscas_85 = {"c17", "c432", "c499", "c880", "c1355", "c1908", "c2670", "c3540", "c5315", "c6288", "c7552"};
 
-    PrepoBenchtoAigBlif(bench_dir, blif_dir, iscas_85);
+//    PrepoBenchtoAigBlif(bench_dir, blif_dir, iscas_85);
 
     path blif_file = blif_dir / "c17.blif";
     auto framework = Framework::GetFramework();
     framework->ReadBlif(blif_file.string());
-    auto ntk = framework->GetNtk();
+    auto ntk_origin = framework->GetNtk();
+
+    auto truth_vec = SimTruthVec(ntk_origin, true);
+    for (auto const &obj : NtkObjs(ntk_origin)) {
+        std::cout << std::setw(5) << ObjName(obj) << ": " << std::bitset<64>(truth_vec.at(obj)[0]) << "\n";
+    }
+
+    auto ntk_approx = NtkDuplicate(ntk_origin);
+    auto target_node = NtkNodebyName(ntk_approx, "23");
+    auto sub_node = NtkNodebyName(ntk_approx, "n9");
+
+    auto alc = new ALC(target_node, sub_node, true);
+    alc->SetComplemented(true);
+    alc->Do();
+    std::cout << SimER(ntk_origin, ntk_approx) << std::endl;
+    alc->Recover();
+    std::cout << SimER(ntk_origin, ntk_approx) << std::endl;
 
     return 0;
 }
