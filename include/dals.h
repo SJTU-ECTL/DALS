@@ -13,16 +13,15 @@
 
 using namespace abc_plus;
 
+/////////////////////////////////////////////////////////////////////////////
+/// Class ALC, Approximate Local Change
+/////////////////////////////////////////////////////////////////////////////
+
 class ALC {
 public:
-    void SetError(double err);
-
-    void SetTarget(ObjPtr t);
-
-    void SetSubstitute(ObjPtr sub);
-
-    void SetComplemented(bool is_complemented);
-
+    //---------------------------------------------------------------------------
+    // Getters & Setters
+    //---------------------------------------------------------------------------
     double GetError() const;
 
     ObjPtr GetTarget() const;
@@ -31,21 +30,34 @@ public:
 
     bool IsComplemented() const;
 
-    bool CanBeComplemented() const;
+    void SetError(double err);
 
+    void SetTarget(ObjPtr t);
+
+    void SetSubstitute(ObjPtr sub);
+
+    void SetComplemented(bool is_complemented);
+
+    //---------------------------------------------------------------------------
+    // ALC Methods
+    //---------------------------------------------------------------------------
     void Do();
 
     void Recover();
 
-    ALC &operator=(const ALC &other);
+    //---------------------------------------------------------------------------
+    // Operator Methods, Constructors & Destructors
+    //---------------------------------------------------------------------------
+//    ALC &operator=(const ALC &other);
 
     ALC();
 
-    ALC(ObjPtr t, ObjPtr s, bool can_be_complemented);
+    ALC(ObjPtr t, ObjPtr s, bool is_complemented, double error = 1);
+
+    ~ALC();
 
 private:
     double error_;
-    bool can_be_complemented_;
     bool is_complemented_;
     ObjPtr target_;
     ObjPtr substitute_;
@@ -53,8 +65,53 @@ private:
     std::vector<ObjPtr> target_fan_outs_;
 };
 
-class DALS {
+/////////////////////////////////////////////////////////////////////////////
+/// Singleton Class DALS, Delay-Driven Approximate Logic Synthesis
+/////////////////////////////////////////////////////////////////////////////
 
+class DALS {
+public:
+    //---------------------------------------------------------------------------
+    // Getters & Setters
+    //---------------------------------------------------------------------------
+    static std::shared_ptr<DALS> GetDALS();
+
+    NtkPtr GetApproxNtk();
+
+    void SetTargetNtk(NtkPtr ntk);
+
+    void SetSim64Cycles(int sim_64_cycles);
+
+    //---------------------------------------------------------------------------
+    // DALS Methods
+    //---------------------------------------------------------------------------
+    void CalcTruthVec(bool show_progress_bar = false);
+
+    void CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress = false, bool refresh_tv = true, int top_k = 3);
+
+    double EstSubPairError(ObjPtr target, ObjPtr substitute);
+
+    void Run(double err_constraint = 0.15);
+
+    //---------------------------------------------------------------------------
+    // Operator Methods, Constructors & Destructors
+    //---------------------------------------------------------------------------
+    void operator=(DALS const &) = delete;
+
+    DALS(Framework const &) = delete;
+
+    ~DALS();
+
+private:
+    NtkPtr target_ntk_;
+    NtkPtr approx_ntk_;
+    int sim_64_cycles_;
+    std::unordered_map<ObjPtr, std::vector<uint64_t>> truth_vec_;
+    std::unordered_map<ObjPtr, std::vector<ALC>> cand_alcs_;
+    std::unordered_map<ObjPtr, ALC> opt_alc_;
+
+
+    DALS();
 };
 
 #endif

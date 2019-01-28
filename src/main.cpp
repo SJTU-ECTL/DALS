@@ -29,23 +29,18 @@ int main(int argc, char *argv[]) {
     path blif_file = blif_dir / "c17.blif";
     auto framework = Framework::GetFramework();
     framework->ReadBlif(blif_file.string());
-    auto ntk_origin = framework->GetNtk();
+    auto ntk = framework->GetNtk();
 
-    auto truth_vec = SimTruthVec(ntk_origin, true);
-    for (auto const &obj : NtkObjs(ntk_origin)) {
-        std::cout << std::setw(5) << ObjName(obj) << ": " << std::bitset<64>(truth_vec.at(obj)[0]) << "\n";
-    }
+//    auto truth_vec = SimTruthVec(ntk, true);
+//    for (auto const &obj : NtkObjs(ntk)) {
+//        std::cout << std::setw(5) << ObjName(obj) << ": " << std::bitset<64>(truth_vec.at(obj)[0]) << "\n";
+//    }
 
-    auto ntk_approx = NtkDuplicate(ntk_origin);
-    auto target_node = NtkNodebyName(ntk_approx, "23");
-    auto sub_node = NtkNodebyName(ntk_approx, "n9");
-
-    auto alc = new ALC(target_node, sub_node, true);
-    alc->SetComplemented(true);
-    alc->Do();
-    std::cout << SimER(ntk_origin, ntk_approx) << std::endl;
-    alc->Recover();
-    std::cout << SimER(ntk_origin, ntk_approx) << std::endl;
+    auto dals = DALS::GetDALS();
+    dals->SetTargetNtk(ntk);
+    dals->SetSim64Cycles(10000);
+    dals->Run(0.15);
+    auto approx_ntk = dals->GetApproxNtk();
 
     return 0;
 }
