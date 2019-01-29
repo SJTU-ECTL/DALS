@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
 //    PrepoBenchtoAigBlif(bench_dir, blif_dir, iscas_85);
 
-    path blif_file = blif_dir / "c17.blif";
+    path blif_file = blif_dir / "c7552.blif";
     auto framework = Framework::GetFramework();
     framework->ReadBlif(blif_file.string());
     auto ntk = framework->GetNtk();

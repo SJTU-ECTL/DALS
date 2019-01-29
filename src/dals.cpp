@@ -12,7 +12,15 @@
 #include <iomanip>
 #include <dals.h>
 #include <sta.h>
+
+// resolve conflict between cpu timers and original timers (deprecated) in boost library
+#define timer timer_deprecated
+
 #include <boost/progress.hpp>
+
+#undef timer
+
+#include <boost/timer/timer.hpp>
 
 /////////////////////////////////////////////////////////////////////////////
 /// Class ALC, Approximate Local Change
@@ -108,15 +116,22 @@ void DALS::SetSim64Cycles(int sim_64_cycles) { sim_64_cycles_ = sim_64_cycles; }
 //---------------------------------------------------------------------------
 void DALS::CalcTruthVec(bool show_progress_bar) { truth_vec_ = SimTruthVec(approx_ntk_, show_progress_bar, sim_64_cycles_); }
 
-void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress, bool refresh_tv, int top_k) {
+void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress, int top_k) {
     cand_alcs_.clear();
-    if (truth_vec_.empty() || refresh_tv) CalcTruthVec();
+
+    boost::timer::cpu_timer timer;
+    timer.start();
+    CalcTruthVec(show_progress);
+    if (show_progress)
+        std::cout << "Calc TruthVec Finished" << timer.format() << std::endl;
 
     for (auto const &t_node : target_nodes)
         cand_alcs_.emplace(t_node, std::vector<ALC>());
     auto time_info = CalcSlack(approx_ntk_);
     auto s_nodes = NtkTopoSortPINode(approx_ntk_);
 
+    timer.start();
+    // calculate candidate ALCs for each target node
     boost::progress_display *pd = nullptr;
     if (show_progress) pd = new boost::progress_display(cand_alcs_.size());;
     for (auto &[t_node, alcs] : cand_alcs_) {
@@ -141,8 +156,10 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
                       });
     }
     if (show_progress)
-        std::cout << "Calc Candidate ALCs Finished" << std::endl;
+        std::cout << "Calc Candidate ALCs Finished" << timer.format() << std::endl;
 
+    timer.start();
+    // calculate the most optimal ALC for each target node
     if (show_progress) pd = new boost::progress_display(cand_alcs_.size());;
     std::vector<ALC> k_alcs;
     for (auto &[t_node, alcs] : cand_alcs_) {
@@ -162,8 +179,7 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
         opt_alc_.emplace(t_node, k_alcs.front());
     }
     if (show_progress)
-        std::cout << "Calc Optimal ALC Finished." << std::endl;
-
+        std::cout << "Calc Optimal ALC Finished." << timer.format() << std::endl;
 }
 
 double DALS::EstSubPairError(ObjPtr target, ObjPtr substitute) {
@@ -174,7 +190,7 @@ double DALS::EstSubPairError(ObjPtr target, ObjPtr substitute) {
 }
 
 void DALS::Run(double err_constraint) {
-    CalcALCs(NtkNodes(approx_ntk_), true, true, 1);
+    CalcALCs(NtkNodes(approx_ntk_), true, 3);
 
     auto time_info = CalcSlack(approx_ntk_);
 
