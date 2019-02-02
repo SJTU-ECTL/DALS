@@ -179,7 +179,7 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
         opt_alc_.emplace(t_node, k_alcs.front());
     }
     if (show_progress)
-        std::cout << "Calc Optimal ALC Finished." << timer.format() << std::endl;
+        std::cout << "Calc Optimal ALC Finished" << timer.format() << std::endl;
 }
 
 double DALS::EstSubPairError(ObjPtr target, ObjPtr substitute) {
@@ -207,6 +207,8 @@ void DALS::Run(double err_constraint) {
                   << " rt=" << time_info.at(alc.GetTarget()).required_time
                   << std::endl;
     }
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+
 //    for (auto &[obj, alcs] : cand_alcs_) {
 //        std::cout << "---------------------------------------------------------------------------" << std::endl;
 //        for (auto &alc: alcs) {

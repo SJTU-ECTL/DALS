@@ -87,7 +87,7 @@ public:
     //---------------------------------------------------------------------------
     void CalcTruthVec(bool show_progress_bar = false);
 
-    void CalcALCs(const std::vector<ObjPtr> &target_nodes, bool refresh_tv = true, int top_k = 3);
+    void CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress = false, int top_k = 3);
 
     double EstSubPairError(ObjPtr target, ObjPtr substitute);
 
@@ -109,7 +109,6 @@ private:
     std::unordered_map<ObjPtr, std::vector<uint64_t>> truth_vec_;
     std::unordered_map<ObjPtr, std::vector<ALC>> cand_alcs_;
     std::unordered_map<ObjPtr, ALC> opt_alc_;
-
 
     DALS();
 };

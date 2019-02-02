@@ -9,12 +9,34 @@
 #ifndef DALS_PLAYGROUND_H
 #define DALS_PLAYGROUND_H
 
-void PrintNodeInfo();
+#include <memory>
+#include <boost/filesystem.hpp>
 
-void ApproximateSubstitution();
+class Playground {
+public:
+    static std::shared_ptr<Playground> GetPlayground();
 
-void StaticTimingAnalysis();
+    void PrintNodeInfo();
 
-void Visualization();
+    void ApproximateSubstitution();
+
+    void StaticTimingAnalysis();
+
+    void Visualization();
+
+    void MaxFlowMinCut();
+
+    void operator=(Playground const &) = delete;
+
+    Playground(Playground const &) = delete;
+
+    ~Playground();
+
+private:
+    boost::filesystem::path project_source_dir_;
+    boost::filesystem::path benchmark_dir_;
+
+    Playground();
+};
 
 #endif

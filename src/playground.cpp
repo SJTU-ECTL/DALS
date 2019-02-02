@@ -8,19 +8,21 @@
 
 #include <playground.h>
 #include <iostream>
-#include <boost/filesystem.hpp>
 #include <boost/timer/timer.hpp>
 #include <abc_plus.h>
 #include <sta.h>
+#include <dinic.h>
 
 using namespace boost::filesystem;
 using namespace abc_plus;
 
-void PrintNodeInfo() {
-    path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark" / "blif";
-    path benchmark_path = benchmark_dir / "c17.blif";
+std::shared_ptr<Playground> Playground::GetPlayground() {
+    static std::shared_ptr<Playground> playground(new Playground);
+    return playground;
+}
 
+void Playground::PrintNodeInfo() {
+    path benchmark_path = benchmark_dir_ / "c17.blif";
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
 
     std::cout << "Objs' names & types:\n";
@@ -33,11 +35,8 @@ void PrintNodeInfo() {
     std::cout << std::endl;
 }
 
-void ApproximateSubstitution() {
-    path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark" / "blif";
-    path benchmark_path = benchmark_dir / "c17.blif";
-
+void Playground::ApproximateSubstitution() {
+    path benchmark_path = benchmark_dir_ / "c17.blif";
     NtkPtr origin_ntk = NtkReadBlif(benchmark_path.string());
     NtkPtr approx_ntk = NtkDuplicate(origin_ntk);
 
@@ -54,23 +53,43 @@ void ApproximateSubstitution() {
     std::cout << "Recovered: " << SimER(origin_ntk, approx_ntk) << std::endl;
 }
 
-void StaticTimingAnalysis() {
-    path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark" / "blif";
-    path benchmark_path = benchmark_dir / "c17.blif";
-
+void Playground::StaticTimingAnalysis() {
+    path benchmark_path = benchmark_dir_ / "c17.blif";
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
     CalcSlack(ntk, true);
     GetKMostCriticalPaths(ntk, 10, true);
 }
 
-void Visualization() {
-    path project_source_dir(PROJECT_SOURCE_DIR);
-    path benchmark_dir = project_source_dir / "benchmark" / "blif";
-    path out_dir = project_source_dir / "out";
-    path benchmark_path = benchmark_dir / "c17.blif";
+void Playground::Visualization() {
+    path out_dir = project_source_dir_ / "out";
+    path benchmark_path = benchmark_dir_ / "c17.blif";
     path dot_path = out_dir / "c17.dot";
-
     NtkPtr ntk = NtkReadBlif(benchmark_path.string());
     NtkWriteDot(ntk, dot_path.string());
+}
+
+void Playground::MaxFlowMinCut() {
+    Dinic dinic(6);
+    dinic.AddEdge(0, 1, 16);
+    dinic.AddEdge(0, 2, 13);
+    dinic.AddEdge(1, 2, 10);
+    dinic.AddEdge(1, 3, 12);
+    dinic.AddEdge(2, 1, 4);
+    dinic.AddEdge(2, 4, 14);
+    dinic.AddEdge(3, 2, 9);
+    dinic.AddEdge(3, 5, 20);
+    dinic.AddEdge(4, 3, 7);
+    dinic.AddEdge(4, 5, 4);
+//    std::cout << dinic.MaxFlow(0, 5) << std::endl;
+//    for (auto e : dinic.E)
+//        std::cout << "u=" << e.u << " v=" << e.v << " cap=" << e.cap << " flow=" << e.flow << std::endl;
+
+    for (auto e : dinic.MinCut(0, 5))
+        std::cout << "u=" << e.u << " v=" << e.v << " cap=" << e.cap << " flow=" << e.flow << std::endl;
+}
+
+Playground::~Playground() = default;
+
+Playground::Playground() : project_source_dir_(PROJECT_SOURCE_DIR) {
+    benchmark_dir_ = project_source_dir_ / "benchmark" / "blif";
 }
