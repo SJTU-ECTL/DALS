@@ -102,8 +102,8 @@ std::vector<Path> GetKMostCriticalPaths(const NtkPtr ntk, int k, bool print_resu
 
     std::priority_queue<Path, std::vector<Path>, decltype(comp)> paths(comp);
 
-    for (auto const &node : NtkPIs(ntk))
-        paths.emplace(node, max_delay_to_sink.at(node));
+    for (auto const &obj : NtkPIs(ntk))
+        paths.emplace(obj, max_delay_to_sink.at(obj));
 
     while (!paths.empty() && (k == -1 || k > 0)) {
         Path path_t = paths.top();
@@ -140,4 +140,60 @@ std::vector<Path> GetKMostCriticalPaths(const NtkPtr ntk, int k, bool print_resu
         }
     }
     return critical_paths;
+}
+
+std::map<int, std::set<int>> GetCriticalGraph(NtkPtr ntk) {
+    int critical_path_delay = -1;
+    std::unordered_map<ObjPtr, TimeObject> time_info = CalcSlack(ntk);
+    std::vector<ObjPtr> sorted_objs = NtkTopoSortPINode(ntk);
+    std::unordered_map<ObjPtr, int> max_delay_to_sink;
+    std::map<int, std::set<int>> critical_graph;
+
+    /* Computation of Maximum Delays to Sink */
+    for (auto const &obj : sorted_objs) {
+        max_delay_to_sink.emplace(obj, 0);
+        if (ObjIsPONode(obj))
+            max_delay_to_sink.at(obj) = 1;
+    }
+    for (auto const &obj : boost::adaptors::reverse(sorted_objs)) {
+        for (auto const &fan_out : ObjFanouts(obj))
+            if (!ObjIsPO(fan_out) && max_delay_to_sink.find(fan_out) != max_delay_to_sink.end())
+                max_delay_to_sink.at(obj) = std::max(
+                        max_delay_to_sink.at(obj),
+                        max_delay_to_sink.at(fan_out) + 1);
+    }
+
+    /* Path Enumeration */
+    auto comp = [](Path a, Path b) { return a.max_delay < b.max_delay; };
+
+    std::priority_queue<Path, std::vector<Path>, decltype(comp)> paths(comp);
+
+    for (auto const &obj : NtkPIs(ntk))
+        paths.emplace(obj, max_delay_to_sink.at(obj));
+
+    while (!paths.empty()) {
+        Path path_t = paths.top();
+        paths.pop();
+        if (ObjIsPO(path_t.objs.back())) {
+            if (path_t.max_delay < critical_path_delay)
+                break;
+            critical_path_delay = std::max(critical_path_delay, path_t.max_delay);
+            path_t.objs.pop_back();
+            for (int i = 0; i < path_t.objs.size() - 1; i++)
+                critical_graph[ObjID(path_t.objs[i])].insert(ObjID(path_t.objs[i + 1]));
+        } else {
+            ObjPtr obj_t = path_t.objs.back();
+            for (auto const &successor : ObjFanouts(obj_t)) {
+                if (!ObjIsPO(successor) && max_delay_to_sink.find(successor) != max_delay_to_sink.end())
+                    paths.emplace(successor,
+                                  (int) path_t.objs.size() + max_delay_to_sink.at(successor),
+                                  path_t.objs);
+                else
+                    paths.emplace(successor,
+                                  (int) path_t.objs.size() + 0,
+                                  path_t.objs);
+            }
+        }
+    }
+    return critical_graph;
 }

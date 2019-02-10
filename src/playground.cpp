@@ -82,6 +82,23 @@ void Playground::MaxFlowMinCut() {
         std::cout << "u=" << e.u << " v=" << e.v << " cap=" << e.cap << " flow=" << e.flow << std::endl;
 }
 
+void Playground::CriticalGraph() {
+    path benchmark_file = benchmark_dir_ / "c17.blif";
+    NtkPtr ntk = NtkReadBlif(benchmark_file.string());
+    auto critical_paths = GetKMostCriticalPaths(ntk);
+    auto critical_graph = GetCriticalGraph(ntk);
+    for (auto &path : critical_paths) {
+        for (auto &obj : path.objs)
+            std::cout << ObjName(obj) << "-" << ObjID(obj) << " ";
+        std::cout << std::endl;
+    }
+    for (auto &[u, vs] : critical_graph) {
+        std::cout << u << ": ";
+        for (auto &v : vs) std::cout << v << " ";
+        std::cout << std::endl;
+    }
+}
+
 Playground::~Playground() = default;
 
 Playground::Playground() : project_source_dir_(PROJECT_SOURCE_DIR) {

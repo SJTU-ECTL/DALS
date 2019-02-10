@@ -11,6 +11,7 @@
 #include <bitset>
 #include <boost/filesystem.hpp>
 #include <abc_plus.h>
+#include <sta.h>
 #include <dals.h>
 #include <playground.h>
 
@@ -25,7 +26,7 @@ void PreproBenchtoAigBlif(const path &bench_dir, const path &blif_dir, const std
 
 int main(int argc, char *argv[]) {
     Test();
-//    Execute();
+    Execute();
     return 0;
 }
 
@@ -34,6 +35,7 @@ void Test() {
     playground->MaxFlowMinCut();
     playground->ApproximateSubstitution();
     playground->StaticTimingAnalysis();
+    playground->CriticalGraph();
 }
 
 void Execute() {

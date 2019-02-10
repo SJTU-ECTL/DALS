@@ -9,6 +9,7 @@
 #ifndef DALS_DALS_H
 #define DALS_DALS_H
 
+#include <map>
 #include <abc_plus.h>
 
 using namespace abc_plus;

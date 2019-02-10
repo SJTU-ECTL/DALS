@@ -10,6 +10,8 @@
 #define DALS_STA_H
 
 #include <unordered_map>
+#include <map>
+#include <set>
 #include <abc_plus.h>
 
 using namespace abc_plus;
@@ -36,5 +38,7 @@ struct Path {
 std::unordered_map<ObjPtr, TimeObject> CalcSlack(NtkPtr ntk, bool print_result = false);
 
 std::vector<Path> GetKMostCriticalPaths(NtkPtr ntk, int k = -1, bool print_result = false);
+
+std::map<int, std::set<int>> GetCriticalGraph(NtkPtr ntk);
 
 #endif

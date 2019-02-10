@@ -132,24 +132,24 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
     timer.start();
     // calculate candidate ALCs for each target node
     boost::progress_display *pd = nullptr;
-    if (show_progress) pd = new boost::progress_display(cand_alcs_.size());;
-    for (auto &[t_node, alcs] : cand_alcs_) {
+    if (show_progress) pd = new boost::progress_display(cand_alcs_.size());
+    for (auto const &t_node : target_nodes) {
         if (show_progress) ++(*pd);
         for (auto const &s_node : s_nodes)
             if (t_node != s_node && time_info.at(s_node).arrival_time < time_info.at(t_node).arrival_time) {
                 double est_error = EstSubPairError(t_node, s_node);
                 if (time_info.at(s_node).arrival_time < time_info.at(t_node).arrival_time - 1)
-                    alcs.emplace_back(t_node, s_node, est_error > 0.5, std::min(est_error, 1 - est_error));
+                    cand_alcs_[t_node].emplace_back(t_node, s_node, est_error > 0.5, std::min(est_error, 1 - est_error));
                 else
-                    alcs.emplace_back(t_node, s_node, false, est_error);
+                    cand_alcs_[t_node].emplace_back(t_node, s_node, false, est_error);
             }
-        if (alcs.size() > top_k)
-            std::partial_sort(alcs.begin(), alcs.begin() + top_k, alcs.end(),
+        if (cand_alcs_[t_node].size() > top_k)
+            std::partial_sort(cand_alcs_[t_node].begin(), cand_alcs_[t_node].begin() + top_k, cand_alcs_[t_node].end(),
                               [](const auto &a, const auto &b) {
                                   return a.GetError() < b.GetError();
                               });
         else
-            std::sort(alcs.begin(), alcs.end(),
+            std::sort(cand_alcs_[t_node].begin(), cand_alcs_[t_node].end(),
                       [](const auto &a, const auto &b) {
                           return a.GetError() < b.GetError();
                       });
@@ -161,10 +161,10 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
     // calculate the most optimal ALC for each target node
     if (show_progress) pd = new boost::progress_display(cand_alcs_.size());;
     std::vector<ALC> k_alcs;
-    for (auto &[t_node, alcs] : cand_alcs_) {
+    for (auto const &t_node : target_nodes) {
         if (show_progress) ++(*pd);
         k_alcs.clear();
-        for (auto alc: alcs) {
+        for (auto alc: cand_alcs_[t_node]) {
             if (k_alcs.size() >= top_k) break;
             alc.Do();
             alc.SetError(SimER(target_ntk_, approx_ntk_));

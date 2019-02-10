@@ -24,6 +24,8 @@ public:
 
     void MaxFlowMinCut();
 
+    void CriticalGraph();
+
     void operator=(Playground const &) = delete;
 
     Playground(Playground const &) = delete;
