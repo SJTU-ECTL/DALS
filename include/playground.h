@@ -16,8 +16,6 @@ class Playground {
 public:
     static std::shared_ptr<Playground> GetPlayground();
 
-    void PrintNodeInfo();
-
     void ApproximateSubstitution();
 
     void StaticTimingAnalysis();
@@ -35,6 +33,7 @@ public:
 private:
     boost::filesystem::path project_source_dir_;
     boost::filesystem::path benchmark_dir_;
+    boost::filesystem::path out_dir_;
 
     Playground();
 };

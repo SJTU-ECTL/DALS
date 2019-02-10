@@ -25,13 +25,15 @@ void PreproBenchtoAigBlif(const path &bench_dir, const path &blif_dir, const std
 
 int main(int argc, char *argv[]) {
     Test();
-    Execute();
+//    Execute();
     return 0;
 }
 
 void Test() {
     auto playground = Playground::GetPlayground();
     playground->MaxFlowMinCut();
+    playground->ApproximateSubstitution();
+    playground->StaticTimingAnalysis();
 }
 
 void Execute() {

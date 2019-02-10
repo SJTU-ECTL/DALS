@@ -49,7 +49,6 @@ void ALC::SetComplemented(bool is_complemented) { is_complemented_ = is_compleme
 // ALC Methods
 //---------------------------------------------------------------------------
 void ALC::Do() {
-    auto ntk = ObjHostNtk(target_);
     if (is_complemented_) {
         inv_ = ObjCreateInv(substitute_);
         ObjReplace(target_, inv_);
