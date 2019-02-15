@@ -32,10 +32,25 @@ int main(int argc, char *argv[]) {
 
 void Test() {
     auto playground = Playground::GetPlayground();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    std::cout << "> Max Flow Min Cut" << std::endl;
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
     playground->MaxFlowMinCut();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    std::cout << "> Approximate Substitution" << std::endl;
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
     playground->ApproximateSubstitution();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    std::cout << "> Static Timing Analysis" << std::endl;
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
     playground->StaticTimingAnalysis();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    std::cout << "> Critical Graph" << std::endl;
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
     playground->CriticalGraph();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    std::cout << "> Test Finished" << std::endl;
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
 }
 
 void Execute() {

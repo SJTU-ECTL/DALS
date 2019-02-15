@@ -36,7 +36,7 @@ void Playground::ApproximateSubstitution() {
     auto alc = new ALC(target_node, sub_node, true);
     alc->Do();
 //    NtkPrintInfo(approx_ntk);
-    std::cout << "Approximate Substitution: " << SimER(origin_ntk, approx_ntk) << std::endl;
+    std::cout << "Substitution: " << SimER(origin_ntk, approx_ntk) << std::endl;
 //    std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
 //    std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
     alc->Recover();
