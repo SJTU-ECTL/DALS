@@ -22,7 +22,7 @@ std::shared_ptr<Playground> Playground::GetPlayground() {
     return playground;
 }
 
-void Playground::ApproximateSubstitution() {
+void Playground::ApproximateSubstitution(bool verbose) {
     path benchmark_file = benchmark_dir_ / "c17.blif";
     NtkPtr origin_ntk = NtkReadBlif(benchmark_file.string());
     NtkPtr approx_ntk = NtkDuplicate(origin_ntk);
@@ -30,20 +30,26 @@ void Playground::ApproximateSubstitution() {
     auto target_node = NtkNodebyName(approx_ntk, "23");
     auto sub_node = NtkNodebyName(approx_ntk, "n9");
 
-//    NtkPrintInfo(approx_ntk);
-//    std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
-//    std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
+    if (verbose) {
+        NtkPrintInfo(approx_ntk);
+        std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
+        std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
+    }
     auto alc = new ALC(target_node, sub_node, true);
     alc->Do();
-//    NtkPrintInfo(approx_ntk);
+    if (verbose) {
+        NtkPrintInfo(approx_ntk);
+        std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
+        std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
+    }
     std::cout << "Substitution: " << SimER(origin_ntk, approx_ntk) << std::endl;
-//    std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
-//    std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
     alc->Recover();
-//    NtkPrintInfo(approx_ntk);
+    if (verbose) {
+        NtkPrintInfo(approx_ntk);
+        std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
+        std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
+    }
     std::cout << "Recovered: " << SimER(origin_ntk, approx_ntk) << std::endl;
-//    std::cout << "ObjNumMax: " << abc::Abc_NtkObjNumMax(approx_ntk) << std::endl;
-//    std::cout << "ObjNum: " << abc::Abc_NtkObjNum(approx_ntk) << std::endl;
 }
 
 void Playground::StaticTimingAnalysis() {
@@ -85,14 +91,12 @@ void Playground::MaxFlowMinCut() {
 void Playground::CriticalGraph() {
     path benchmark_file = benchmark_dir_ / "c17.blif";
     NtkPtr ntk = NtkReadBlif(benchmark_file.string());
-    auto critical_paths = GetKMostCriticalPaths(ntk);
-    auto critical_graph = GetCriticalGraph(ntk);
-    for (auto &path : critical_paths) {
+    for (auto &path : GetKMostCriticalPaths(ntk)) {
         for (auto &obj : path.objs)
             std::cout << ObjName(obj) << "-" << ObjID(obj) << " ";
         std::cout << std::endl;
     }
-    for (auto &[u, vs] : critical_graph) {
+    for (auto &[u, vs] : GetCriticalGraph(ntk)) {
         std::cout << u << ": ";
         for (auto &v : vs) std::cout << v << " ";
         std::cout << std::endl;

@@ -39,7 +39,7 @@ void Test() {
     std::cout << "---------------------------------------------------------------------------" << std::endl;
     std::cout << "> Approximate Substitution" << std::endl;
     std::cout << "---------------------------------------------------------------------------" << std::endl;
-    playground->ApproximateSubstitution();
+    playground->ApproximateSubstitution(false);
     std::cout << "---------------------------------------------------------------------------" << std::endl;
     std::cout << "> Static Timing Analysis" << std::endl;
     std::cout << "---------------------------------------------------------------------------" << std::endl;
@@ -55,11 +55,13 @@ void Test() {
 
 void Execute() {
     path project_source_dir(PROJECT_SOURCE_DIR);
+    path out_dir = project_source_dir / "out";
     path bench_dir = project_source_dir / "benchmark" / "bench";
     path blif_dir = project_source_dir / "benchmark" / "blif";
     std::vector<std::string> iscas_85 = {"c17", "c432", "c499", "c880", "c1355", "c1908", "c2670", "c3540", "c5315", "c6288", "c7552"};
-    path blif_file = blif_dir / "c17.blif";
 
+    std::string blif_name = "c17.blif";
+    path blif_file = blif_dir / blif_name;
 //    PreproBenchtoAigBlif(bench_dir, blif_dir, iscas_85);
     auto framework = Framework::GetFramework();
     framework->ReadBlif(blif_file.string());
@@ -68,7 +70,10 @@ void Execute() {
     dals->SetTargetNtk(ntk);
     dals->SetSim64Cycles(10000);
     dals->Run(0.15);
+
+    path approx_blif_file = out_dir / blif_name;
     auto approx_ntk = dals->GetApproxNtk();
+    NtkWriteBlif(approx_ntk, approx_blif_file.string());
 }
 
 void PreproBenchtoAigBlif(const path &bench_dir, const path &blif_dir, const std::vector<std::string> &files) {
@@ -84,8 +89,3 @@ void PreproBenchtoAigBlif(const path &bench_dir, const path &blif_dir, const std
         framework->WriteBlif(blif_file.string());
     }
 }
-
-//    auto truth_vec = SimTruthVec(ntk, true);
-//    for (auto const &obj : NtkObjs(ntk)) {
-//        std::cout << std::setw(5) << ObjName(obj) << ": " << std::bitset<64>(truth_vec.at(obj)[0]) << "\n";
-//    }

@@ -16,7 +16,7 @@ class Playground {
 public:
     static std::shared_ptr<Playground> GetPlayground();
 
-    void ApproximateSubstitution();
+    void ApproximateSubstitution(bool verbose = false);
 
     void StaticTimingAnalysis();
 

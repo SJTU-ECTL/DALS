@@ -3,15 +3,17 @@
  * @brief
  * @author Nathan Zhou
  * @date 2019-01-20
- * @bug No known bugs.
+ * @bug Several bugs remain to be fixed.
+ *
+ * 1. When top_k >= 2, the fanins of the target node may switch with each other unexpectedly.
+ * 2. Fail to find the mincut of c499.
+ * 3. In some cases, the depth of the circuit stays the same for multiple rounds.
  */
 
 #include <iostream>
 #include <algorithm>
 #include <bitset>
 #include <iomanip>
-#include <dals.h>
-#include <sta.h>
 
 // resolve conflict between cpu timers and original timers (deprecated) in boost library
 #define timer timer_deprecated
@@ -21,6 +23,9 @@
 #undef timer
 
 #include <boost/timer/timer.hpp>
+#include <dals.h>
+#include <sta.h>
+#include <dinic.h>
 
 /////////////////////////////////////////////////////////////////////////////
 /// Class ALC, Approximate Local Change
@@ -165,7 +170,7 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
         if (show_progress) ++(*pd);
         k_alcs.clear();
         for (auto alc: cand_alcs_[t_node]) {
-            if (k_alcs.size() >= top_k) break;
+            if (k_alcs.size() == top_k) break;
             alc.Do();
             alc.SetError(SimER(target_ntk_, approx_ntk_));
             alc.Recover();
@@ -189,24 +194,82 @@ double DALS::EstSubPairError(ObjPtr target, ObjPtr substitute) {
 }
 
 void DALS::Run(double err_constraint) {
-    CalcALCs(NtkNodes(approx_ntk_), true, 3);
+    double err = 0;
+    int round = 0;
+    while (err < err_constraint) {
+        round++;
+        auto time_info = CalcSlack(approx_ntk_);
 
-    auto time_info = CalcSlack(approx_ntk_);
+        std::vector<ObjPtr> pis_nodes_0, nodes_0;
+        for (auto const &obj : NtkTopoSortPINode(approx_ntk_))
+            if (time_info.at(obj).slack == 0) {
+                pis_nodes_0.push_back(obj);
+                if (ObjIsNode(obj)) nodes_0.push_back(obj);
+            }
 
-    for (auto &[obj, alc] : opt_alc_) {
+        CalcALCs(nodes_0, false, 1);
+
+        int N = abc::Abc_NtkObjNumMax(approx_ntk_) + 1;
+        int source = 0, sink = N - 1;
+        Dinic dinic(N * 2);
+
+        for (const auto &obj_0 : pis_nodes_0) {
+            int u = ObjID(obj_0);
+            if (ObjIsPI(obj_0))
+                dinic.AddEdge(source, u, std::numeric_limits<double>::max());
+            else {
+                dinic.AddEdge(u, u + N, opt_alc_.at(obj_0).GetError());
+                if (ObjIsPONode(obj_0))
+                    dinic.AddEdge(u + N, sink, std::numeric_limits<double>::max());
+            }
+        }
+
+        for (auto &[u, vs] : GetCriticalGraph(approx_ntk_)) {
+            for (auto &v : vs) {
+                if (ObjIsPI(NtkObjbyID(approx_ntk_, u)))
+                    dinic.AddEdge(u, v, std::numeric_limits<double>::max());
+                else
+                    dinic.AddEdge(u + N, v, std::numeric_limits<double>::max());
+            }
+        }
+
         std::cout << "---------------------------------------------------------------------------" << std::endl;
-        std::cout << "target=" << std::setw(5) << ObjName(alc.GetTarget())
-                  << " sub=" << std::setw(5) << ObjName(alc.GetSubstitute())
-                  << " compl=" << alc.IsComplemented()
-                  << std::fixed
-                  << " est err=" << std::setprecision(4) << std::min(EstSubPairError(alc.GetTarget(), alc.GetSubstitute()),
-                                                                     1 - EstSubPairError(alc.GetTarget(), alc.GetSubstitute()))
-                  << " sim err=" << std::setprecision(4) << alc.GetError()
-                  << " at=" << time_info.at(alc.GetTarget()).arrival_time
-                  << " rt=" << time_info.at(alc.GetTarget()).required_time
-                  << std::endl;
+        std::cout << "> Round " << round << std::endl;
+        std::cout << "---------------------------------------------------------------------------" << std::endl;
+        std::cout << "MinCut: " << std::endl;
+        for (const auto edge : dinic.MinCut(source, sink)) {
+            auto obj = NtkObjbyID(approx_ntk_, edge.u);
+            std::cout << ObjName(obj) << "--->" << ObjName(opt_alc_.at(obj).GetSubstitute())
+                      << " : " << opt_alc_.at(obj).IsComplemented()
+                      << " : " << opt_alc_.at(obj).GetError()
+                      << std::endl;
+            opt_alc_.at(obj).Do();
+        }
+
+        err = SimER(target_ntk_, approx_ntk_);
+        std::cout << "Error Rate: " << err << std::endl;
+        std::cout << "Delay: "
+                  << GetKMostCriticalPaths(target_ntk_, 1)[0].max_delay << "--->"
+                  << GetKMostCriticalPaths(approx_ntk_, 1)[0].max_delay << std::endl;
     }
-    std::cout << "---------------------------------------------------------------------------" << std::endl;
+
+
+//    std::cout << "Max Flow: " << dinic.MaxFlow(source, sink) << std::endl;
+
+//    for (auto &[obj, alc] : opt_alc_) {
+//        std::cout << "---------------------------------------------------------------------------" << std::endl;
+//        std::cout << "target=" << std::setw(5) << ObjName(alc.GetTarget())
+//                  << " sub=" << std::setw(5) << ObjName(alc.GetSubstitute())
+//                  << " compl=" << alc.IsComplemented()
+//                  << std::fixed
+//                  << " est err=" << std::setprecision(4) << std::min(EstSubPairError(alc.GetTarget(), alc.GetSubstitute()),
+//                                                                     1 - EstSubPairError(alc.GetTarget(), alc.GetSubstitute()))
+//                  << " sim err=" << std::setprecision(4) << alc.GetError()
+//                  << " at=" << time_info.at(alc.GetTarget()).arrival_time
+//                  << " rt=" << time_info.at(alc.GetTarget()).required_time
+//                  << std::endl;
+//    }
+//    std::cout << "---------------------------------------------------------------------------" << std::endl;
 
 //    for (auto &[obj, alcs] : cand_alcs_) {
 //        std::cout << "---------------------------------------------------------------------------" << std::endl;
