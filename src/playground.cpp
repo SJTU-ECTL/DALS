@@ -103,6 +103,45 @@ void Playground::CriticalGraph() {
     }
 }
 
+void Playground::CriticalErrorNetwork() {
+    path benchmark_file = benchmark_dir_ / "c1355.blif";
+    NtkPtr ntk = NtkReadBlif(benchmark_file.string());
+
+    int N = abc::Abc_NtkObjNumMax(ntk) + 1;
+    int source = 0, sink = N - 1;
+    Dinic dinic(N * 2);
+
+    auto time_info = CalcSlack(ntk);
+    std::vector<ObjPtr> pis_nodes_0, nodes_0;
+    for (auto const &obj : NtkTopoSortPINode(ntk))
+        if (time_info.at(obj).slack == 0) {
+            pis_nodes_0.push_back(obj);
+            if (ObjIsNode(obj)) nodes_0.push_back(obj);
+        }
+
+    for (const auto &obj_0 : pis_nodes_0) {
+        int u = ObjID(obj_0);
+        if (ObjIsPI(obj_0))
+            dinic.AddEdge(source, u, std::numeric_limits<double>::max());
+        else {
+            dinic.AddEdge(u, u + N, 1);
+            if (ObjIsPONode(obj_0))
+                dinic.AddEdge(u + N, sink, std::numeric_limits<double>::max());
+        }
+    }
+
+    for (auto &[u, vs] : GetCriticalGraph(ntk)) {
+        for (auto &v : vs) {
+            if (ObjIsPI(NtkObjbyID(ntk, u)))
+                dinic.AddEdge(u, v, std::numeric_limits<double>::max());
+            else
+                dinic.AddEdge(u + N, v, std::numeric_limits<double>::max());
+        }
+    }
+
+    std::cout << "Max Flow: " << dinic.MaxFlow(source, sink) << std::endl;
+}
+
 Playground::~Playground() = default;
 
 Playground::Playground() : project_source_dir_(PROJECT_SOURCE_DIR) {

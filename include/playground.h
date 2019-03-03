@@ -26,6 +26,8 @@ public:
 
     void CriticalGraph();
 
+    void CriticalErrorNetwork();
+
     void operator=(Playground const &) = delete;
 
     Playground(Playground const &) = delete;
