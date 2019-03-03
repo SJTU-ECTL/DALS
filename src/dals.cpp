@@ -3,11 +3,7 @@
  * @brief
  * @author Nathan Zhou
  * @date 2019-01-20
- * @bug Several bugs remain to be fixed.
- *
- * 1. When top_k >= 2, the fanins of the target node may switch with each other unexpectedly.
- * 2. Fail to find the mincut of c499.
- * 3. In some cases, the depth of the circuit stays the same for multiple rounds.
+ * @bug In some cases, the depth of the circuit stays the same for multiple rounds.
  */
 
 #include <iostream>
@@ -62,15 +58,23 @@ void ALC::Do() {
 }
 
 void ALC::Recover() {
-    for (auto const &fan_out : target_fan_outs_) {
-        if (is_complemented_)
-            abc::Abc_ObjPatchFanin(fan_out, inv_, target_);
-        else
-            abc::Abc_ObjPatchFanin(fan_out, substitute_, target_);
-//        abc::Vec_IntPush(&target_->vFanouts, ObjID(fan_out));
-    }
+//    Bug: 2 n9 n10 --Do()--> 2 2 n10 --Recover()--> n9 2 n10
+//    for (auto const &fan_out : target_fan_outs_) {
+//        if (is_complemented_)
+//            abc::Abc_ObjPatchFanin(fan_out, inv_, target_);
+//        else
+//            abc::Abc_ObjPatchFanin(fan_out, substitute_, target_);
+//    }
+//    if (is_complemented_)
+//        ObjDelete(inv_);
+
     if (is_complemented_)
         ObjDelete(inv_);
+    for (auto const &fan_out : target_fan_outs_) {
+        abc::Abc_ObjRemoveFanins(fan_out);
+        for (auto const &fan_in : target_fan_out_fan_ins_.at(fan_out))
+            abc::Abc_ObjAddFanin(fan_out, fan_in);
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -88,8 +92,11 @@ ALC::ALC() = default;
 ALC::ALC(ObjPtr t, ObjPtr s, bool is_complemented, double error) : error_(error), is_complemented_(is_complemented),
                                                                    target_(t), substitute_(s), inv_(nullptr),
                                                                    target_fan_outs_(std::vector<ObjPtr>()) {
-    for (auto const &fan_out : ObjFanouts(target_))
+    for (auto const &fan_out : ObjFanouts(target_)) {
         target_fan_outs_.push_back(fan_out);
+        for (auto const &fan_in : ObjFanins(fan_out))
+            target_fan_out_fan_ins_[fan_out].push_back(fan_in);
+    }
 }
 
 ALC::~ALC() = default;
@@ -174,7 +181,7 @@ void DALS::CalcALCs(const std::vector<ObjPtr> &target_nodes, bool show_progress,
             alc.Do();
             alc.SetError(SimER(target_ntk_, approx_ntk_));
             alc.Recover();
-            k_alcs.emplace_back(alc);
+            k_alcs.push_back(alc);
         }
         std::sort(k_alcs.begin(), k_alcs.end(),
                   [](const auto &a, const auto &b) {
@@ -207,7 +214,7 @@ void DALS::Run(double err_constraint) {
                 if (ObjIsNode(obj)) nodes_0.push_back(obj);
             }
 
-        CalcALCs(nodes_0, false, 1);
+        CalcALCs(nodes_0, false, 3);
 
         int N = abc::Abc_NtkObjNumMax(approx_ntk_) + 1;
         int source = 0, sink = N - 1;
@@ -218,7 +225,10 @@ void DALS::Run(double err_constraint) {
             if (ObjIsPI(obj_0))
                 dinic.AddEdge(source, u, std::numeric_limits<double>::max());
             else {
-                dinic.AddEdge(u, u + N, opt_alc_.at(obj_0).GetError());
+                if (opt_alc_.at(obj_0).GetError() == 0)
+                    dinic.AddEdge(u, u + N, std::numeric_limits<double>::min());
+                else
+                    dinic.AddEdge(u, u + N, opt_alc_.at(obj_0).GetError());
                 if (ObjIsPONode(obj_0))
                     dinic.AddEdge(u + N, sink, std::numeric_limits<double>::max());
             }
@@ -232,6 +242,12 @@ void DALS::Run(double err_constraint) {
                     dinic.AddEdge(u + N, v, std::numeric_limits<double>::max());
             }
         }
+
+//        for (auto &[u, vs] : GetCriticalGraph(approx_ntk_)) {
+//            std::cout << u << ": ";
+//            for (auto &v : vs) std::cout << v << " ";
+//            std::cout << std::endl;
+//        }
 
         std::cout << "---------------------------------------------------------------------------" << std::endl;
         std::cout << "> Round " << round << std::endl;
@@ -251,10 +267,32 @@ void DALS::Run(double err_constraint) {
         std::cout << "Delay: "
                   << GetKMostCriticalPaths(target_ntk_, 1)[0].max_delay << "--->"
                   << GetKMostCriticalPaths(approx_ntk_, 1)[0].max_delay << std::endl;
+
+//        std::cout << "Do: " << ObjName(NtkObjbyID(approx_ntk_, 383)) << std::endl;
+//        opt_alc_.at(NtkObjbyID(approx_ntk_, 383)).Do();
+//        std::cout << "Do: " << ObjName(NtkObjbyID(approx_ntk_, 487)) << std::endl;
+//        opt_alc_.at(NtkObjbyID(approx_ntk_, 487)).Do();
+//        std::cout << "Error Rate: " << SimER(target_ntk_, approx_ntk_) << std::endl;
+//        std::cout << "Delay: "
+//                  << GetKMostCriticalPaths(target_ntk_, 1)[0].max_delay << "--->"
+//                  << GetKMostCriticalPaths(approx_ntk_, 1)[0].max_delay << std::endl;
+
+//        for (auto &[obj, alc] : opt_alc_) {
+//            std::cout << "---------------------------------------------------------------------------" << std::endl;
+//            std::cout << "target=" << std::setw(5) << ObjName(alc.GetTarget())
+//                      << " sub=" << std::setw(5) << ObjName(alc.GetSubstitute())
+//                      << " compl=" << alc.IsComplemented()
+//                      << std::fixed
+//                      << " est err=" << std::setprecision(4) << std::min(EstSubPairError(alc.GetTarget(), alc.GetSubstitute()),
+//                                                                         1 - EstSubPairError(alc.GetTarget(), alc.GetSubstitute()))
+//                      << " sim err=" << std::setprecision(4) << alc.GetError()
+//                      << " at=" << time_info.at(alc.GetTarget()).arrival_time
+//                      << " rt=" << time_info.at(alc.GetTarget()).required_time
+//                      << std::endl;
+//        }
+//        std::cout << "---------------------------------------------------------------------------" << std::endl;
+//        break;
     }
-
-
-//    std::cout << "Max Flow: " << dinic.MaxFlow(source, sink) << std::endl;
 
 //    for (auto &[obj, alc] : opt_alc_) {
 //        std::cout << "---------------------------------------------------------------------------" << std::endl;

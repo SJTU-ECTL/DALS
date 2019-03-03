@@ -64,6 +64,7 @@ private:
     ObjPtr substitute_;
     ObjPtr inv_;
     std::vector<ObjPtr> target_fan_outs_;
+    std::unordered_map<ObjPtr, std::vector<ObjPtr>> target_fan_out_fan_ins_;
 };
 
 /////////////////////////////////////////////////////////////////////////////
