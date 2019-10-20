@@ -37,5 +37,5 @@ sudo apt install libboost-all-dev
 - src: source codes
 - abc: Berkeley ABC
 - abc-plus: C++ wrapper of Berkeley ABC
-- benchmark: benchmarks in blif format
-- out: output approximate circuits in blif format
+- benchmark: benchmarks
+- out: output approximate circuits
