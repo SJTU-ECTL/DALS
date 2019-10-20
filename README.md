@@ -1,5 +1,7 @@
 # DALS: Delay-Driven Approximate Logic Synthesis
 
+Refactored version of the original DALS: Delay-Driven Approximate Logic Synthesis, using personal thin wrapper abc-plus.
+
 ## Prerequisites
 ### macOS
 
