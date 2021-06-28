@@ -9,7 +9,7 @@ endif ()
 
 set(ABC_USE_NAMESPACE abc)
 set(dals_include ${PROJECT_SOURCE_DIR}/include/)
-add_subdirectory(abc EXCLUDE_FROM_ALL)
+#add_subdirectory(abc EXCLUDE_FROM_ALL)
 add_subdirectory(abc-plus)
 
 add_definitions(-DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
