@@ -2,6 +2,9 @@
 
 Refactored version of the original DALS: Delay-Driven Approximate Logic Synthesis, using personal thin wrapper abc-plus.
 
+## Paper
+[DALS: Delay-driven approximate logic synthesis](https://umji.sjtu.edu.cn/~wkqian/papers/Zhou_Yao_Huang_Su_Meng_Qian_DALS_Delay_Driven_Approximate_Logic_Synthesis.pdf)
+
 ## Prerequisites
 ### macOS
 
