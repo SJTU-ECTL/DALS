@@ -65,7 +65,7 @@ namespace abc {
 
         // transform logic functions from BDD to SOP
         if ((fHasBdds = Abc_NtkIsBddLogic(pNtk))) {
-            if (!Abc_NtkBddToSop(pNtk, -1, ABC_INFINITY)) {
+            if (!Abc_NtkBddToSop(pNtk, -1, ABC_INFINITY, 1)) {
                 printf("Io_WriteDotNtk(): Converting to SOPs has failed.\n");
                 return;
             }
